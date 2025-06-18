@@ -19,7 +19,6 @@ const UserSchema: Schema<IUser> = new mongoose.Schema(
             type: String,
             required: true,
             unique: true,
-            match: [/^\d{10}$/, "Please enter a valid phone number"]
         },
         role: {
             type: String,

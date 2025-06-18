@@ -1,5 +1,8 @@
 import { Job, Queue, Worker } from "bullmq";
 import { jobOptions, SendQueueName, redisConnection } from "../config/queue";
+import { sendText } from "../services/whatsapp.service";
+import History from "../models/history.model";
+import { MessageRoleEnum } from "../types/enum";
 
 export const sendQueue = new Queue(SendQueueName, {
     connection: redisConnection,
@@ -20,12 +23,13 @@ export const addSendToQueue = async (data: SendData): Promise<void> => {
 };
 
 const worker = new Worker<SendData>(SendQueueName, async (job: Job<SendData>) => {
-    // const response = await getGeminiResponse(job.data.text);
-    // const result = response?.candidates && response.candidates[0]?.content?.parts && response.candidates[0].content.parts[0]?.text
-    //     ? response.candidates[0].content.parts[0].text as string
-    //     : "We will connect to you later";
-    // console.log(result);
-    // await sendText({ to: job.data.from, body: result });
+    const { to, text } = job.data;
+    await History.create({
+        phoneNumber: to,
+        role: MessageRoleEnum.SYSTEM,
+        message: text
+    });
+    await sendText({ to, body: text });
 }, { connection: redisConnection });
 
 worker.on('completed', (job) => {

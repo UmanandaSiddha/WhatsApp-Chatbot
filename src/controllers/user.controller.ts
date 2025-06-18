@@ -28,8 +28,12 @@ export const registerUser = catchAsyncErrors(async (req: Request, res: Response,
 
     const otp = user.getOneTimePassword();
     await user.save({ validateBeforeSave: false });
-    
-    await sendText({ to: `+91${user.phoneNumber}`, body: `Welcome to WhatsApp Integration. \nYour OTP is ${otp}` });
+
+    try {
+        await sendText({ to: `+91${user.phoneNumber}`, body: `Welcome to WhatsApp Integration. \nYour OTP is ${otp}` });
+    } catch (error) {
+        console.log("Failed to send text")
+    }
 
     console.log(`OTP for ${user.phoneNumber} is ${otp}`);
 
@@ -124,7 +128,7 @@ export const forgotPassword = catchAsyncErrors(async (req: Request, res: Respons
 
     const user = await User.findOne({ phoneNumber });
     if (!user) return next(new ErrorHandler("User not Found", 404));
-    
+
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 

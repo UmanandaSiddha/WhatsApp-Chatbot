@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { sendText } from '../services/whatsapp.service';
-import { getGeminiResponse } from '../services/gemini.service';
 import { addResponseToQueue } from '../queue/response.queue';
+import { addSendToQueue } from '../queue/send.queue';
 
 export function verifyWebhook(req: Request, res: Response): void {
     const mode = req.query['hub.mode'];
@@ -50,7 +50,7 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
     }
 
     try {
-        await sendText({ to, body });
+        await addSendToQueue({ to, text: body });
         res.json({ success: true });
     } catch (err: any) {
         console.error('Error sending message:', err.message);
