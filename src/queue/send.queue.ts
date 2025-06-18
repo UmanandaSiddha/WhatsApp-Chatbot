@@ -1,0 +1,42 @@
+import { Job, Queue, Worker } from "bullmq";
+import { jobOptions, SendQueueName, redisConnection } from "../config/queue";
+
+export const sendQueue = new Queue(SendQueueName, {
+    connection: redisConnection,
+    defaultJobOptions: jobOptions
+});
+
+interface SendData {
+    [key: string]: any;
+}
+
+export const addSendToQueue = async (data: SendData): Promise<void> => {
+    await sendQueue.add("Send Queue", data, {
+        removeOnComplete: true,
+        removeOnFail: {
+            count: 10,
+        },
+    });
+};
+
+const worker = new Worker<SendData>(SendQueueName, async (job: Job<SendData>) => {
+    // const response = await getGeminiResponse(job.data.text);
+    // const result = response?.candidates && response.candidates[0]?.content?.parts && response.candidates[0].content.parts[0]?.text
+    //     ? response.candidates[0].content.parts[0].text as string
+    //     : "We will connect to you later";
+    // console.log(result);
+    // await sendText({ to: job.data.from, body: result });
+}, { connection: redisConnection });
+
+worker.on('completed', (job) => {
+    console.log(`Job ${job.id} has completed!`);
+});
+
+worker.on("failed", async (job: Job<SendData> | undefined, err: Error, prev?: string) => {
+    if (!job) {
+        console.log(`A job has failed but job details are missing.`);
+        return;
+    }
+
+    console.log(`Job ${job.id} has failed with ${err.message}`);
+});
